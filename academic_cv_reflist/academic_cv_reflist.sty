@@ -7,19 +7,49 @@
 %% of the LaTeX Project Public License Distributed from CTAN archives
 %% in directory macros/latex/base/lppl.txt.
 % 
-\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\NeedsTeXFormat{LaTeX2e}[2018/03/01]
 \ProvidesPackage{academic_cv_reflist}
-  [2011/01/11 v0.01 LaTeX package for my own purpose]
+  [2011/01/11 v0.01 LaTeX package for reflist in academic_cv]
 
 % SET UP BIBLATEX %
-\usepackage[american]{babel} % load babel in american english
-\usepackage{csquotes} % for formatting I think?
-\usepackage[backend=biber,defernumbers=true,
-			labelnumber=true,sorting=ydnt,
-			maxbibnames=99,uniquename=false,
-			isbn=false]{biblatex} % load biblatex and define setup
-\setlength\bibitemsep{0.25\baselineskip} % item separation adjustment
+\RequirePackage[american]{babel} % load babel in american english
+\RequirePackage{csquotes} % for formatting
+\RequirePackage[backend = biber, defernumbers = true,
+			          labelnumber = true, sorting = ydnt,
+			          maxbibnames = 99, uniquename = false,
+			          isbn = false]{biblatex} % load biblatex and define setup
 \DeclareLanguageMapping{american}{american-apa} 
+\RequirePackage{etoolbox}
+\RequirePackage{kvoptions}
+  \SetupKeyvalOptions{%
+    family=acvr,
+    prefix=acvr@,
+    }
+
+
+
+\DeclareStringOption[bf]{ref@emphstyle}
+% \DeclareDefaultOption*{\PassOptionsToClass{\CurrentOption}{article}}
+\ProcessKeyvalOptions*
+
+
+
+
+
+\setlength\bibitemsep{0.25\baselineskip} % item separation adjustment
+\DeclareFieldFormat{url}{\ifhyperref{\href{#1}{[link]}}{\url{#1}}}
+
+
+% \newcommand*{\mycmd}{\myc@key}
+
+\ifdefstring{\acvr@ref@emphstyle}{bf}{%
+  \def\acvr@ref@emphstyleset{\bfseries}
+}{}
+\ifdefstring{\acvr@ref@emphstyle}{it}{%
+  \def\acvr@ref@emphstyleset{\itshape}
+}{}
+
+
 
 
 % change the order of where the date information comes from, this chooses pubstate first if it is available
@@ -52,10 +82,10 @@
   {\newunit\newblock\printfield{pubstate}}}
 
 
-% this set up counter definition for each printed group
+% this sets up counter definition for each printed group
+% and defines how to print the numbers (i.e., as total+1-number)
 % this code snippet is adapted from Audrey at stackexchange
 % https://tex.stackexchange.com/questions/21401/biblatex-reverse-numbering-i-e-count-down
-\makeatletter
 \patchcmd{\blx@printbibliography}
   {\blx@bibliography\blx@tempa}
   {\setcounter{bibitemtotal}{0}%
@@ -67,16 +97,56 @@
    \blx@setlabwidth{\labelnumberwidth}{%
      \csuse{abx@ffd@*@labelnumberwidth}{\arabic{bibitemtotal}}}%
    \blx@bibliography\blx@tempa}{}{}
-\makeatother
 
-% define how to print the numbers (as total+1-number)
 \newcounter{bibitemtotal}
 \newrobustcmd*{\mkbibdesc}[1]{%
   \number\numexpr\value{bibitemtotal}+1-#1\relax}
 \DeclareFieldFormat{labelnumber}{\mkbibdesc{#1}}
 \DeclareFieldFormat{labelnumberwidth}{\mkbibbrackets{#1}}
 
-% some propoerties of the printing refs? unknown
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% https://tex.stackexchange.com/questions/73136/make-specific-author-bold-using-biblatex
+% https://tex.stackexchange.com/questions/40703/biblatex-is-it-possible-to-patch-macros-created-with-newbibmacro/40705#40705
+\def\act@on@bibmacro#1#2{%
+  \expandafter#1\csname abx@macro@\detokenize{#2}\endcsname}
+\def\patchbibmacro{\act@on@bibmacro\patchcmd}
+\def\pretobibmacro{\act@on@bibmacro\pretocmd}
+\def\apptobibmacro{\act@on@bibmacro\apptocmd}
+\def\showbibmacro{\act@on@bibmacro\show}
+
+\newbibmacro*{name:emph}[2]{%
+  \edef\blx@tmp@name{\expandonce#1, \expandonce#2}%
+  \def\do##1{\ifdefstring{\blx@tmp@name}{##1}{\acvr@ref@emphstyleset\listbreak}{}}%\acvr@\emphstyle
+  \dolistloop{\emphnames}}
+\newcommand*{\emphnames}{}
+
+
+\pretobibmacro{name:family}{\begingroup\usebibmacro{name:emph}{#1}{#2}}{}{}
+\pretobibmacro{name:given-family}{\begingroup\usebibmacro{name:emph}{#1}{#2}}{}{}
+\pretobibmacro{name:family-given}{\begingroup\usebibmacro{name:emph}{#1}{#2}}{}{}
+\pretobibmacro{name:delim}{\begingroup\normalfont}{}{}
+
+\apptobibmacro{name:family}{\endgroup}{}{}
+\apptobibmacro{name:given-family}{\endgroup}{}{}
+\apptobibmacro{name:family-given}{\endgroup}{}{}
+\apptobibmacro{name:delim}{\endgroup}{}{}
+
+% just for demonstration
+% \ExecuteBibliographyOptions{maxnames=99,giveninits}
+% \DeclareNameAlias{default}{family-given/given-family}
+
+% \addbibresource{biblatex-examples.bib}
+\forcsvlist{\listadd\emphnames}
+  {{Moodie, Andrew~J.}, {Moodie, A.~J.}, {Moodie, Andrew\bibnamedelima J.},
+   {Moodie, A\bibinitperiod\bibinitdelim J\bibinitperiod}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+% fix some spacing issues
 \defbibenvironment{bibliography}
   {\list
      {\printtext[labelnumberwidth]{\printfield{labelnumber}}}
@@ -91,7 +161,7 @@
   {\item}
 
 % declare how to format the [link]s
-\DeclareFieldFormat{url}{\ifhyperref{\href{#1}{[link]}}{\url{#1}}}
+
 
 
 \endinput
