@@ -104,6 +104,19 @@
 \DeclareFieldFormat{labelnumber}{\mkbibdesc{#1}}
 \DeclareFieldFormat{labelnumberwidth}{\mkbibbrackets{#1}}
 
+
+% this sets up an environment which prints the number of citations therein
+\newcounter{refs}
+\defbibenvironment{counter}
+  {\setcounter{refs}{0}
+  \renewcommand{\blx@driver}[1]{}
+  }
+  {\therefs}
+  {\stepcounter{refs}}
+\defbibheading{counter}{}
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % https://tex.stackexchange.com/questions/73136/make-specific-author-bold-using-biblatex
 % https://tex.stackexchange.com/questions/40703/biblatex-is-it-possible-to-patch-macros-created-with-newbibmacro/40705#40705
