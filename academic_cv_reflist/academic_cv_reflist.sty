@@ -16,8 +16,8 @@
 \RequirePackage{csquotes} % for formatting
 \RequirePackage[backend = biber, defernumbers = true,
 			          labelnumber = true, sorting = ydnt,
-			          maxbibnames = 99, uniquename = false,
-			          isbn = false]{biblatex} % load biblatex and define setup
+			          maxbibnames = 99, uniquename = false, uniquelist=false,
+			          isbn = false, bibstyle=authoryear, dashed=false]{biblatex} % load biblatex and define setup
 \DeclareLanguageMapping{american}{american-apa} 
 \RequirePackage{etoolbox}
 \RequirePackage{kvoptions}
@@ -54,8 +54,9 @@
 
 % change the order of where the date information comes from, this chooses pubstate first if it is available
 \DeclareLabeldate{%
-  \field{pubstate}
   \field{date}
+  \field{pubstate}
+  \field{year}
   \literal{n.d.}
 }
 
@@ -63,23 +64,46 @@
 % renew the date macro, so that the pubstate is printed into the parentheses if it is present, otherwise the date is printed.
 % This code snippet is adapted from Andrew Swann at stackexchange
 % https://tex.stackexchange.com/questions/154363/biblatex-how-to-get-author-forthcoming-when-pubstate-forthcoming-is-set-in
-\renewbibmacro*{date}{%
-  \iffieldundef{\thefield{datelabelsource}year}
-    {\printtext{\printfield{pubstate}}}
-    {\printtext{%
-       \iffieldsequal{year}{\thefield{datelabelsource}year}
-         {\printdate}%
-         {\printfield{labelyear}%
-          \printfield{extrayear}}}}}%
+%%%%----->   the following may be no longer needed after biblatex 10.3 changes
+% \renewbibmacro*{date}{%
+%   \iffieldundef{\thefield{datelabelsource}year}
+%     {\printtext{\printfield{pubstate}}}
+%     {\printtext{%
+%        \iffieldsequal{year}{\thefield{datelabelsource}year}
+%          {\printdate}%
+%          {\printfield{labelyear}%
+          % \printfield{extrayear}}}}}%
+%%%%<-----          
+%%%%----->   the following is needed to fix a bug p[roducing empty parentheses in biblatex 10.3; may be fixed in an update?
+\renewbibmacro*{issue+date}{%
+  \ifboolexpr{test {\iffieldundef{year}}
+              and test {\iffieldundef{issue}}}
+    {}
+    {\iffieldundef{issue}{}{%
+    \printtext[parens]{%
+       \printfield{issue}%
+       \setunit*{\addspace}%
+       \usebibmacro{date}}}}%
+  \newunit}
+%%%%<-----          
 
 
 % renew the pubstate macro to not print a second time at end
 % This code snippet is adapted from Andrew Swann at stackexchange
 % https://tex.stackexchange.com/questions/154363/biblatex-how-to-get-author-forthcoming-when-pubstate-forthcoming-is-set-in
+% \renewbibmacro*{addendum+pubstate}{%
+%   \printfield{addendum}%
+%   \iffieldundef{\thefield{datelabesource}year}{}
+  % {\newunit\newblock\printfield{pubstate}}}
 \renewbibmacro*{addendum+pubstate}{%
   \printfield{addendum}%
-  \iffieldundef{\thefield{datelabesource}year}{}
+  \iffieldequalstr{labeldatesource}{pubstate}{}
   {\newunit\newblock\printfield{pubstate}}}
+
+
+% don't print a/b for same year refs
+\AtEveryCitekey{\clearfield{extradate}}
+\AtEveryBibitem{\clearfield{extradate}}
 
 
 % this sets up counter definition for each printed group
