@@ -36,7 +36,7 @@
 
 
 
-\setlength\bibitemsep{0.25\baselineskip} % item separation adjustment
+\setlength\bibitemsep{0.15\baselineskip} % item separation adjustment
 \DeclareFieldFormat{url}{\ifhyperref{\href{#1}{[link]}}{\url{#1}}}
 
 
@@ -168,6 +168,48 @@
 \apptobibmacro{name:family-given}{\endgroup}{}{}
 \apptobibmacro{name:delim}{\endgroup}{}{}
 
+
+
+%% hide years in "unpublished type" for explictly sectioned years
+%  (i.e., before 2019, show the date, after do not)
+\AtEveryBibitem{%
+  \ifentrytype{unpublished}{%
+    \ifnumless{\thefield{year}}{2019}
+      {}
+      {\clearfield{labelyear}}
+  }{%
+  }%
+}
+
+
+\defbibenvironment{nolabelbib}
+  {\list
+     {--}
+     {\setlength{\leftmargin}{\bibhang}%
+      \setlength{\itemindent}{0px}%
+      \setlength{\itemsep}{\bibitemsep}%
+      \setlength{\parsep}{\bibparsep}}}
+  {\endlist}
+  {\item}
+
+
+%%%%%%%%% macro for sorting out by years
+\def\mblx@yearfrom{-1000}
+\def\mblx@yearto{3000}
+
+\newrobustcmd*{\setcheckfromtorange}[2]{%
+  \def\mblx@yearfrom{#1}%
+  \def\mblx@yearto{#2}%
+}
+
+\defbibcheck{fromto}{%
+  \iffieldint{year}
+    {\ifnumless{\thefield{year}}{\mblx@yearfrom}
+       {\skipentry}
+       {\ifnumgreater{\thefield{year}}{\mblx@yearto}
+          {\skipentry}
+          {}}}
+    {\skipentry}}
 
 
 
